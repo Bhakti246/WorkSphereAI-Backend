@@ -1,12 +1,24 @@
 from pathlib import Path
+import os
+import dj_database_url
+from dotenv import load_dotenv
+
+load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = "django-insecure-change-this-key"
+SECRET_KEY = os.getenv(
+    "SECRET_KEY",
+    "django-insecure-change-this-key"
+)
 
-DEBUG = True
+DEBUG = os.getenv("DEBUG", "False") == "True"
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    ".onrender.com",
+    "localhost",
+    "127.0.0.1",
+]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -29,6 +41,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -58,14 +71,12 @@ TEMPLATES = [
 WSGI_APPLICATION = "config.wsgi.application"
 
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": "worksphere_ai",
-        "USER": "postgres",
-        "PASSWORD": "bhakti",
-        "HOST": "localhost",
-        "PORT": "5432",
-    }
+    "default": dj_database_url.config(
+        default=os.getenv(
+            "DATABASE_URL",
+            "postgresql://postgres:bhakti@localhost:5432/worksphere_ai"
+        )
+    )
 }
 
 AUTH_PASSWORD_VALIDATORS = []
@@ -81,7 +92,13 @@ USE_I18N = True
 
 USE_TZ = True
 
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
+
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+STATICFILES_STORAGE = (
+    "whitenoise.storage.CompressedManifestStaticFilesStorage"
+)
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
