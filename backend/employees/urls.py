@@ -4,7 +4,7 @@ from rest_framework.routers import DefaultRouter
 from .views import EmployeeViewSet, dashboard_stats
 
 router = DefaultRouter()
-router.register(r'employees', EmployeeViewSet)
+router.register(r'', EmployeeViewSet, basename='employees')
 
 urlpatterns = [
     path('', include(router.urls)),

@@ -34,7 +34,6 @@ def dashboard_stats(request):
         float(emp.salary or 0)
         for emp in Employee.objects.all()
     )
-
     return Response({
         "total_employees": total_employees,
         "present_today": present_today,
