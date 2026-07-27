@@ -8,12 +8,11 @@ class Employee(models.Model):
 
     employee_id = models.CharField(max_length=20, unique=True)
     full_name = models.CharField(max_length=255)
-    photo = models.ImageField(
-    upload_to="employees/",
+    photo = models.ImageField(upload_to="employees/", blank=True, null=True)
+    face_embedding = models.JSONField(
+    null=True,
     blank=True,
-    null=True
 )
-
     email = models.EmailField(unique=True)
     phone = models.CharField(max_length=20)
     department = models.CharField(max_length=100)

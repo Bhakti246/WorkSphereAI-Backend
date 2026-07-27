@@ -4,6 +4,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from .models import Employee
+from .face_service import get_face_embedding
 from .serializers import EmployeeSerializer
 from attendance.models import Attendance
 from payroll.models import Payroll
@@ -11,6 +12,16 @@ from payroll.models import Payroll
 class EmployeeViewSet(viewsets.ModelViewSet):
     queryset = Employee.objects.all()
     serializer_class = EmployeeSerializer
+
+    def perform_create(self, serializer):
+        employee = serializer.save()
+
+        if employee.photo:
+            embedding = get_face_embedding(employee.photo.path)
+
+            if embedding:
+                employee.face_embedding = embedding
+                employee.save()
 # Dashboard API
 @api_view(["GET"])
 @permission_classes([AllowAny])
