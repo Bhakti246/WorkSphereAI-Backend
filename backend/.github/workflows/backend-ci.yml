@@ -1,0 +1,96 @@
+name: Backend CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+
+jobs:
+  test:
+    name: Django Backend Tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: worksphere_ai
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m pip install psycopg2-binary
+
+      - name: Wait for Postgres
+        run: |
+          until pg_isready -h localhost -p 5432 -U postgres; do
+            sleep 1
+          done
+
+      - name: Configure environment
+        run: |
+          echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/worksphere_ai" >> $GITHUB_ENV
+          echo "DEBUG=False" >> $GITHUB_ENV
+          echo "SECRET_KEY=supersecretkeywhichshouldbereplaced" >> $GITHUB_ENV
+          echo "CSRF_TRUSTED_ORIGINS=http://localhost" >> $GITHUB_ENV
+          echo "ALLOWED_HOSTS=localhost" >> $GITHUB_ENV
+          echo "FORCE_SSL=True" >> $GITHUB_ENV
+          echo "CORS_ALLOW_ALL_ORIGINS=False" >> $GITHUB_ENV
+          echo "CORS_ALLOWED_ORIGINS=http://localhost" >> $GITHUB_ENV
+
+      - name: Assert no duplicate auth includes
+        run: |
+          echo "Checking for duplicate include(...) usages of ems.auth_urls in .py files..."
+          cnt=$(grep -R --include='*.py' -E "include\s*\(\s*['\"]ems.auth_urls['\"]\s*\)" -n . | wc -l || true)
+          if [ "$cnt" -gt 1 ]; then
+            echo "Duplicate ems.auth_urls include(...) usages found ($cnt):"
+            grep -R --include='*.py' -E "include\s*\(\s*['\"]ems.auth_urls['\"]\s*\)" -n .
+            exit 1
+          fi
+          echo "No duplicate auth include(...) usages detected."
+
+      - name: Validate production config
+        run: |
+          python - <<'PY'
+          import os
+          import django
+          os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
+          django.setup()
+          from django.conf import settings
+
+          assert settings.DEBUG is False, 'DEBUG must be False in production validation'
+          assert settings.SECURE_SSL_REDIRECT is True, 'SECURE_SSL_REDIRECT must be True in production validation'
+          assert bool(settings.ALLOWED_HOSTS), 'ALLOWED_HOSTS must not be empty in production validation'
+          assert settings.CORS_ALLOW_ALL_ORIGINS is False, 'CORS_ALLOW_ALL_ORIGINS must be False in production validation'
+          print('Production config validation passed')
+          PY
+
+      - name: Run Django checks
+        run: python manage.py check
+
+      - name: Run backend tests
+        run: python manage.py test ems.tests

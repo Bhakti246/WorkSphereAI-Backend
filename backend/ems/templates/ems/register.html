@@ -1,0 +1,46 @@
+{% extends "ems/base.html" %}
+
+{% block title %}Create account - EMS{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-7 col-xl-6">
+    <div class="card shadow-sm border-0"><div class="card-body p-4 p-md-5">
+      <h2 class="h3 mb-2">Create your employee account</h2>
+      <p class="text-muted mb-4">Your administrator can assign HR, Manager, or Admin access later.</p>
+      <div id="alert" class="alert d-none" role="alert"></div>
+      <form id="registerForm" class="row g-3">
+        <div class="col-md-6"><label for="full_name" class="form-label">Full name</label><input id="full_name" class="form-control" required></div>
+        <div class="col-md-6"><label for="username" class="form-label">Username</label><input id="username" class="form-control" required></div>
+        <div class="col-md-6"><label for="email" class="form-label">Email</label><input id="email" type="email" class="form-control" required></div>
+        <div class="col-md-6"><label for="phone" class="form-label">Phone</label><input id="phone" class="form-control" required></div>
+        <div class="col-md-6"><label for="department" class="form-label">Department</label><input id="department" class="form-control" placeholder="e.g. Engineering" required></div>
+        <div class="col-md-6"><label for="gender" class="form-label">Gender</label><select id="gender" class="form-select" required><option value="">Select</option><option>Male</option><option>Female</option></select></div>
+        <div class="col-12"><label for="password" class="form-label">Password</label><input id="password" type="password" class="form-control" minlength="8" required><div class="form-text">Use at least 8 characters.</div></div>
+        <div class="col-12 d-flex align-items-center gap-2"><button class="btn btn-primary" type="submit">Create account</button><a class="btn btn-link" href="/login/">Already have an account? Login</a></div>
+      </form>
+    </div></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('registerForm').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const fields = ['full_name', 'username', 'email', 'phone', 'department', 'gender', 'password'];
+  const payload = Object.fromEntries(fields.map(field => [field, document.getElementById(field).value.trim()]));
+  const alert = document.getElementById('alert');
+  try {
+    const response = await fetch('/api/auth/register/', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload)});
+    const data = await response.json();
+    alert.className = 'alert ' + (response.ok ? 'alert-success' : 'alert-danger');
+    alert.textContent = response.ok ? data.detail : Object.values(data).flat().join(' ');
+    if (response.ok) window.setTimeout(() => window.location.href = '/login/', 1000);
+  } catch (error) {
+    alert.className = 'alert alert-danger';
+    alert.textContent = 'Registration could not be completed. Please try again.';
+  }
+});
+</script>
+{% endblock %}

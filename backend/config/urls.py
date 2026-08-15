@@ -2,10 +2,8 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from rest_framework_simplejwt.views import (
-    TokenObtainPairView,
-    TokenRefreshView,
-)
+# Token views are provided by `ems.auth_urls` under `/api/auth/`
+from ems.auth_views import CustomTokenObtainPairView
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularSwaggerView,
@@ -16,16 +14,12 @@ urlpatterns = [
     path("admin/", admin.site.urls),
 
     # JWT Authentication
-    path("api/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
-    path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+    path("api/auth/", include("ems.auth_urls")),
 
-    # API Apps
-    path("api/employees/", include("employees.urls")),
-    path("api/attendance/", include("attendance.urls")),
-    path("api/payroll/", include("payroll.urls")),
-    path("api/leaves/", include("leaves.urls")),
-    path("api/accounts/", include("accounts.urls")),
-    path("api/reports/", include("reports.urls")),
+    # Consolidated API include
+    path("api/", include("ems.urls")),
+    # Frontend pages for basic auth flows and dashboard
+    path("", include("ems.frontend_urls")),
 
     # API Documentation
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),

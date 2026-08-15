@@ -1,0 +1,60 @@
+{% extends "ems/base.html" %}
+
+{% block title %}Dashboard - WorkSphere EMS{% endblock %}
+
+{% block content %}
+<style>
+  :root { --ws-indigo:#4f46e5; --ws-bg:#f6f7fb; --ws-ink:#172033; --ws-muted:#6b7280; }
+  body { background:var(--ws-bg); color:var(--ws-ink); font-family:Inter,system-ui,sans-serif; }
+  .navbar { background:#fff!important; border-bottom:1px solid #e6e8ee; padding:.85rem 2rem; }
+  .navbar-brand { color:var(--ws-indigo)!important; font-weight:800; letter-spacing:-.4px; }
+  .dashboard-hero { background:linear-gradient(115deg,#312e81,#4f46e5 60%,#6975f5); color:#fff; border-radius:18px; padding:28px 30px; box-shadow:0 15px 35px rgba(79,70,229,.18); }
+  .dashboard-hero h1 { font-size:1.7rem; font-weight:750; margin:0 0 .35rem; }.dashboard-hero p { margin:0; color:#e2e5ff; }
+  .today { display:inline-block; padding:.55rem .8rem; border:1px solid #ffffff42; background:#ffffff19; border-radius:8px; font-size:.82rem; }
+  .stat-card { height:100%; border:0; border-radius:15px; box-shadow:0 3px 16px rgba(18,27,55,.06); transition:transform .18s; }.stat-card:hover { transform:translateY(-3px); }
+  .stat-card .card-body { padding:1.35rem; }.stat-label { color:var(--ws-muted); font-weight:600; font-size:.86rem; }.stat-value { color:var(--ws-ink); font-size:1.8rem; font-weight:750; letter-spacing:-.7px; }.stat-note { color:#98a1af; font-size:.76rem; }
+  .stat-icon { width:42px; height:42px; border-radius:12px; display:grid; place-items:center; font-size:1.25rem; }.icon-indigo{background:#eeedff;color:#4f46e5}.icon-green{background:#e7f8ee;color:#159b59}.icon-amber{background:#fff4df;color:#d97706}.icon-purple{background:#f3ecff;color:#8b5cf6}
+  .panel { border:0; border-radius:15px; box-shadow:0 3px 16px rgba(18,27,55,.06); }.panel .card-header { background:#fff; border-bottom:1px solid #eef0f4; padding:1.05rem 1.3rem; font-weight:700; }.quick-action { border:1px solid #edf0f5; border-radius:10px; padding:.8rem; color:var(--ws-ink); font-weight:600; font-size:.9rem; display:flex; align-items:center; gap:.65rem; }.quick-action:hover { background:#f3f2ff; border-color:#d9d6ff; color:var(--ws-indigo); }.action-dot { width:30px; height:30px; display:grid; place-items:center; border-radius:8px; background:#eeedff; color:var(--ws-indigo); }
+  .chart { height:180px; display:flex; align-items:end; gap:11px; padding:12px 5px 0; }.chart-column{height:100%; flex:1; display:flex; flex-direction:column; justify-content:end; align-items:center; gap:7px; color:#8a92a1; font-size:.72rem;}.chart-track{width:100%; height:145px; display:flex; align-items:end; background:#f2f4f8; border-radius:5px; overflow:hidden;}.chart-bar{width:100%; border-radius:5px; background:linear-gradient(#818cf8,#4f46e5);}
+  @media(max-width:576px){.navbar{padding:.8rem 1rem}.dashboard-hero{padding:22px}.today{margin-top:12px}}
+</style>
+
+<section class="dashboard-hero mb-4 d-sm-flex justify-content-between align-items-center">
+  <div><h1>Good morning, {% if employee_dashboard %}Employee{% else %}Admin{% endif %}</h1><p>{% if employee_dashboard %}Here is your attendance and leave snapshot for today.{% else %}Here’s a snapshot of your workforce today.{% endif %}</p></div>
+  <span id="today" class="today"></span>
+</section>
+
+<section id="stats" class="row g-3" aria-live="polite">
+  <div class="col-sm-6 col-xl-3"><article class="card stat-card"><div class="card-body"><div class="d-flex justify-content-between align-items-center"><span class="stat-label">Total employees</span><span class="stat-icon icon-indigo">♙</span></div><div id="total_employees" class="stat-value mt-3">—</div><div class="stat-note">People in your organization</div></div></article></div>
+  <div class="col-sm-6 col-xl-3"><article class="card stat-card"><div class="card-body"><div class="d-flex justify-content-between align-items-center"><span class="stat-label">Present today</span><span class="stat-icon icon-green">✓</span></div><div id="present_today" class="stat-value mt-3">—</div><div class="stat-note">Checked in for today</div></div></article></div>
+  <div class="col-sm-6 col-xl-3"><article class="card stat-card"><div class="card-body"><div class="d-flex justify-content-between align-items-center"><span class="stat-label">On leave</span><span class="stat-icon icon-amber">☀</span></div><div id="on_leave" class="stat-value mt-3">—</div><div class="stat-note">Approved leave requests</div></div></article></div>
+  <div class="col-sm-6 col-xl-3"><article class="card stat-card"><div class="card-body"><div class="d-flex justify-content-between align-items-center"><span class="stat-label">Monthly payroll</span><span class="stat-icon icon-purple">₹</span></div><div id="total_salary" class="stat-value mt-3">—</div><div class="stat-note">Combined employee salaries</div></div></article></div>
+</section>
+
+<section class="row g-3 mt-1">
+  <div class="col-lg-7"><article class="card panel h-100"><div class="card-header d-flex justify-content-between"><span>Weekly attendance</span><a class="text-primary small" href="/api/attendance/">View records</a></div><div class="card-body"><div class="chart" aria-label="Illustrative weekly attendance chart"><div class="chart-column"><div class="chart-track"><span class="chart-bar" style="height:63%"></span></div>Mon</div><div class="chart-column"><div class="chart-track"><span class="chart-bar" style="height:78%"></span></div>Tue</div><div class="chart-column"><div class="chart-track"><span class="chart-bar" style="height:70%"></span></div>Wed</div><div class="chart-column"><div class="chart-track"><span class="chart-bar" style="height:91%"></span></div>Thu</div><div class="chart-column"><div class="chart-track"><span class="chart-bar" style="height:84%"></span></div>Fri</div><div class="chart-column"><div class="chart-track"><span class="chart-bar" style="height:28%"></span></div>Sat</div><div class="chart-column"><div class="chart-track"><span class="chart-bar" style="height:15%"></span></div>Sun</div></div><p class="mb-0 mt-3 text-muted small">Weekly trend preview. Use attendance records for detailed history.</p></div></article></div>
+  <div class="col-lg-5"><article class="card panel h-100"><div class="card-header">Quick actions</div><div class="card-body d-grid gap-2"><a class="quick-action" href="/api/employees/"><span class="action-dot">+</span>Add employee</a><a class="quick-action" href="/api/attendance/"><span class="action-dot">◷</span>View attendance</a><a class="quick-action" href="/api/leaves/"><span class="action-dot">⌁</span>Manage leave requests</a><a class="quick-action" href="/api/payroll/"><span class="action-dot">₹</span>Manage payroll</a></div></article></div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadStats() {
+  const access = localStorage.getItem('access');
+  if (!access) { window.location.replace('/login/'); return; }
+  try {
+    const res = await fetch('/api/dashboard/stats/', { headers: { Authorization: 'Bearer ' + access } });
+    if (!res.ok) throw new Error('Unable to load dashboard statistics');
+    const data = await res.json();
+    document.getElementById('total_employees').textContent = data.total_employees ?? 0;
+    document.getElementById('present_today').textContent = data.present_today ?? 0;
+    document.getElementById('on_leave').textContent = data.on_leave ?? 0;
+    document.getElementById('total_salary').textContent = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(data.total_salary || 0);
+  } catch (error) {
+    document.getElementById('stats').insertAdjacentHTML('beforebegin', '<div class="alert alert-warning">Dashboard data could not be loaded. Please log in again and retry.</div>');
+  }
+}
+document.getElementById('today').textContent = new Intl.DateTimeFormat('en-IN', { weekday:'short', day:'numeric', month:'short', year:'numeric' }).format(new Date());
+loadStats();
+</script>
+{% endblock %}

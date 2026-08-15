@@ -1,0 +1,54 @@
+{% extends "ems/base.html" %}
+
+{% block title %}Login - EMS{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <h2>Login</h2>
+    <div id="alert" class="alert d-none" role="alert"></div>
+    <form id="loginForm">
+      <div class="mb-3">
+        <label for="username" class="form-label">Username</label>
+        <input type="text" class="form-control" id="username" required>
+      </div>
+      <div class="mb-3">
+        <label for="password" class="form-label">Password</label>
+        <input type="password" class="form-control" id="password" required>
+      </div>
+      <button class="btn btn-primary" type="submit">Login</button>
+      <a class="btn btn-link" href="/password-reset/">Forgot password?</a>
+      <a class="btn btn-link" href="/register/">Create account</a>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const username = document.getElementById('username').value;
+  const password = document.getElementById('password').value;
+
+  const res = await fetch('/api/auth/token/', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({username, password})
+  });
+
+  const data = await res.json();
+  const alert = document.getElementById('alert');
+
+  if (res.ok) {
+    localStorage.setItem('access', data.access);
+    localStorage.setItem('refresh', data.refresh);
+    window.location.href = data.dashboard_url || '/my-dashboard/';
+  } else {
+    alert.classList.remove('d-none');
+    alert.classList.add('alert-danger');
+    alert.textContent = data.detail || JSON.stringify(data);
+  }
+});
+</script>
+{% endblock %}
